@@ -8,6 +8,7 @@ import ku.cs.xylaz.service.SignupService;
 import ku.cs.xylaz.repository.MemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -28,7 +29,7 @@ public class AuthController {
 
     //    // สำหรับลงทะเบียน
     @PostMapping("/signup")
-    public ResponseEntity<String> signupUser(@Valid @RequestBody SignupRequest user) {
+    public ResponseEntity<String> signupUser(@RequestBody SignupRequest user) {
         // ปริ้นข้อมูลที่ได้รับ
 //        System.out.println("Received signup request for user: " + user.getUsername());
 
@@ -41,7 +42,8 @@ public class AuthController {
     }
     @RestController
     public class SigninController {
-
+        @Autowired
+        private PasswordEncoder passwordEncoder;
         @PostMapping("/signin")
         public ResponseEntity<String> signupUser(@RequestBody LoginRequest loginRequest) {
             if (loginRequest.getUsername() == null || loginRequest.getPassword() == null) {
@@ -57,7 +59,7 @@ public class AuthController {
             }
 
             // เปรียบเทียบ password
-            if (!member.getPassword().equals(loginRequest.getPassword())) {
+            if (!passwordEncoder.matches(loginRequest.getPassword(), member.getPassword())) {
                 return ResponseEntity.status(400).body("Invalid password");
             }
 
