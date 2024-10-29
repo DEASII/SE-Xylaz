@@ -54,7 +54,7 @@ public class AuthController {
     @RestController
     public class SigninController {
 
-        @PostMapping("/signin")
+        @PostMapping("/signup")
         public ResponseEntity<String> signupUser(@RequestBody LoginRequest loginRequest) {
             if (loginRequest.getUsername() == null || loginRequest.getPassword() == null) {
                 return ResponseEntity.badRequest().body("Username and password are required");
