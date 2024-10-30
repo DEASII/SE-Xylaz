@@ -19,9 +19,9 @@ public class SignupService {
     @Autowired
     private ModelMapper modelMapper;
 
-
     @Autowired
     private PasswordEncoder passwordEncoder;
+
     public boolean isUsernameAvailable(String username) {
         return repository.findByUsername(username) == null;
     }
@@ -41,10 +41,4 @@ public class SignupService {
         repository.save(record);
     }
 
-
-
-
-    public Member getUser(String username) {
-        return repository.findByUsername(username);
-    }
 }

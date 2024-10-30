@@ -3,7 +3,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8085/';
 
 // ฟังก์ชันสำหรับการ Login
 export const login = async (credentials) => {
-    const response = await fetch(`${API_URL}/login`, {
+    const response = await fetch(`${API_URL}/signin`, { // เปลี่ยน URL ให้ถูกต้อง
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
@@ -16,9 +16,9 @@ export const login = async (credentials) => {
     return response.json();
 };
 
-// ฟังก์ชันตัวอย่างอื่น (Signup)
+// ฟังก์ชันสำหรับการ Signup
 export const signup = async (data) => {
-    const response = await fetch(`${API_URL}/signup`, {
+    const response = await fetch(`${API_URL}/signup`, { // เปลี่ยน URL ให้ถูกต้อง
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

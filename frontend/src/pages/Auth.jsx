@@ -9,31 +9,26 @@ const Auth = () => {
   const [state, setState] = useState('signin'); // เริ่มต้นที่หน้า Login
   const navigate = useNavigate(); // ใช้ useNavigate แทน history
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
 
-    // ตรวจสอบว่ามีการกรอก username และ password ครบถ้วนหรือไม่
-    if (!username || !password) {
-      alert("Please enter both username and password.");
-      return; // หยุดการทำงานถ้าไม่ได้กรอกข้อมูลครบ
-    }
-
-    try {
-      const response = await axios.post('http://localhost:8085/signin', {
-        username,
-        password,
-      });
-      if (response.status === 200) {
-        setState("login"); // เปลี่ยนสถานะกลับไปที่ Login หลังจากสมัครสมาชิก
-        navigate("/");
+    const handleLogin = async (e) => {
+      e.preventDefault();
+      try {
+        const response = await axios.post('http://localhost:8085/signin', {
+          username,
+          password
+        });
+        const token = response.data.data.token;  // jwt token
+        if (token) {
+          localStorage.setItem('token', token); // บันทึก token ใน LocalStorage
+          navigate("/");
+        }
+      } catch (error) {
+        console.error('Login failed:', error.response?.data || error.message);
+        alert(error.response?.data.message);
       }
-    } catch (error) {
-      // แสดงข้อความจากเซิร์ฟเวอร์ถ้าหากเกิดข้อผิดพลาด
-      const errorMessage = error.response?.data || "Login failed. Please try again.";
-      alert(errorMessage);
-      // อย่าทำนำทางไปยังหน้า About ถ้าเข้าสู่ระบบไม่สำเร็จ
-    }
-  };
+    };
+
+
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -52,7 +47,7 @@ const Auth = () => {
       // ตรวจสอบสถานะ HTTP 200
       if (response.status === 200) {
         alert("Signup successful"); // แสดงข้อความสำเร็จ
-        navigate("/login");
+        navigate("/signin");
       }
     } catch (error) {
       // ตรวจสอบข้อความผิดพลาดที่ได้รับจากเซิร์ฟเวอร์
