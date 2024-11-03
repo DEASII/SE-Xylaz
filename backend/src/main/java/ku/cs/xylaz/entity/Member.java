@@ -12,8 +12,8 @@ import java.util.UUID;
 public class Member {
     @Id
     @GeneratedValue
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator") // ใช้ UUID
-    @Column(name = "member_id")
+    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    @Column(name = "member_id", updatable = false, nullable = false)
     private UUID id;
 
     @Column(nullable = false, unique = true) // ค่าที่ไม่ซ้ำกัน

@@ -37,9 +37,8 @@ public class AppointmentController {
     @PostMapping("/{docId}")
     public ResponseEntity<Appointment> bookAppointment(@PathVariable String docId, @RequestBody AppointmentRequest request) {
         // Validate request
-        Member member = memberRepository.findById(request.getMemberId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+        Member member = memberRepository.findByUsername(request.getUsername());
+//        Member member = memberRepository.findByUsername("chew");
         // ใช้ docId เป็น barberId
         Barber barber = barberRepository.findById(UUID.fromString(docId))
                 .orElseThrow(() -> new RuntimeException("Barber not found"));
@@ -59,11 +58,11 @@ public class AppointmentController {
     }
 
 
-    @GetMapping("/{docId}")
-    public String book(@PathVariable String docId, @RequestBody AppointmentRequest request) {
-
-        return "yo "+request.getMemberId().toString();
-    }
+//    @GetMapping("/{docId}")
+//    public String book(@PathVariable String docId, @RequestBody AppointmentRequest request) {
+//
+//        return "yo "+request.getMemberId().toString();
+//    }
     public List<Barber> convertToBarberList(List<Map<String, Object>> barbersData) {
         List<Barber> barbers = new ArrayList<>();
 

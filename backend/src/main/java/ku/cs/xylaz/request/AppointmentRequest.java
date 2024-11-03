@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 public class AppointmentRequest {
-    private UUID memberId;
+    private String username;
     private UUID barberId;
     private LocalDateTime appointmentDate;
     private String serviceType;

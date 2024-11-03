@@ -23,7 +23,6 @@ public class BarberController {
 
     @PostMapping("/addBarber")
     public ResponseEntity<Barber> addBarber(@RequestBody Barber barber) {
-        System.out.println("Adding barber: " + barber);
         Barber savedBarber = barberRepository.save(barber);
         return new ResponseEntity<>(savedBarber, HttpStatus.CREATED);
     }
@@ -37,7 +36,7 @@ public class BarberController {
                     barberData.put("name", barber.getName());
                     barberData.put("specialty", barber.getSpecialty());
                     barberData.put("experience", barber.getExperience());
-                    barberData.put("profilePicture", "doc1");// แก้รูป
+                    barberData.put("profilePicture", barber.getProfilePicture());// แก้รูป
                     barberData.put("gender", barber.getGender());
                     barberData.put("about", barber.getAbout());
                     return barberData;

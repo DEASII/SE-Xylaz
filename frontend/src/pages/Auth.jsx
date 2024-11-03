@@ -49,6 +49,7 @@ const Auth = () => {
       // ตรวจสอบสถานะ HTTP 200
       if (response.status === 200) {
         alert("Signup successful"); // แสดงข้อความสำเร็จ
+        window.location.reload();
         navigate("/signin");
       }
     } catch (error) {

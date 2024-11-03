@@ -1,24 +1,60 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import {useNavigate, useParams} from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 import { assets } from '../assets/assets';
 import TopDoctors from '../components/TopDoctors';
 import axios from 'axios';
+import * as response from "autoprefixer";
 
+response.data.member_id = undefined;
 const Appointment = () => {
   const { docId } = useParams();
   const { doctors, currencySymbol } = useContext(AppContext);
   const daysOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
-  const [docInfo, setDocInfo] = useState(null);
+  // const [docInfo, setDocInfo] = useState(null);
   const [docSlots, setDocSlots] = useState([]);
   const [slotIndex, setSlotIndex] = useState(0);
   const [slotTime, setSlotTime] = useState('');
+  const [barbers, setBarbers] = useState({});
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+
+
+  useEffect(() => {
+    // เรียกใช้ API เพื่อดึงข้อมูลบาร์เบอร์
+    fetch('http://localhost:8085/')
+        .then(response => response.json())
+        .then(data => {
+          setBarbers(data);
+        })
+        .catch(error => console.error('Error fetching barbers:', error));
+  }, []);
+  useEffect(() => {
+    // ตรวจสอบว่ามี token ใน localStorage หรือไม่ ถ้ามีก็ดึงค่าชื่อผู้ใช้
+    const storedToken = localStorage.getItem('token');
+    const lastUser = localStorage.getItem('lastUser');
+
+    if (storedToken) {
+      setToken(storedToken);
+      setUser(lastUser);
+    }
+  }, []);
+  useEffect(() => {
+    fetchDocInfo();
+  }, [barbers, docId]);
+  useEffect(() => {
+    if (barbers) getAvailableSlots();
+  }, [barbers]);
 
   const fetchDocInfo = async () => {
-    const docInfo = doctors.find(doc => doc._id === docId);
-    setDocInfo(docInfo);
+    const barberInfo = barbers.find(barber => barber.barber_id === docId);
+
+    // console.error(fetchMemberId(user));
+    setBarbers(barberInfo);
   };
+
+
   const bookAppointment = async () => {
     if (!slotTime) {
       alert("กรุณาเลือกช่วงเวลานัดหมาย!");
@@ -29,12 +65,13 @@ const Appointment = () => {
     const selectedDateTime = new Date(docSlots[slotIndex][0].dateTime);
     const [hour, minute] = slotTime.split(':');
     selectedDateTime.setHours(parseInt(hour), parseInt(minute));
-
+    // console.error(user.toString());
     const requestBody = {
-      memberId: "YOUR_MEMBER_ID", // แทนที่ด้วย member ID ที่แท้จริงจาก context หรือ props
-      barberId: docInfo.id, // แทนที่ด้วย barber ID ที่แท้จริง
+
+      username: user, // แทนที่ด้วย member ID ที่แท้จริงจาก context หรือ props
+      barberId: docId.toString(), // แทนที่ด้วย barber ID ที่แท้จริง
       appointmentDate: selectedDateTime.toISOString(), // แปลงเป็น ISO String
-      serviceType: docInfo.serviceType // หรือประเภทบริการที่คุณต้องการส่ง
+      serviceType: "Cut", // หรือประเภทบริการที่คุณต้องการส่ง
     };
 
     try {
@@ -49,6 +86,7 @@ const Appointment = () => {
 
       if (response.status === 200 || response.status === 201) {
         alert("จองนัดหมายเรียบร้อยแล้ว!");
+
         // อัปเดต UI หรือทำการรีเซ็ต slots ได้ที่นี่
       } else {
         alert("ไม่สามารถจองนัดหมายได้");
@@ -91,38 +129,34 @@ const Appointment = () => {
     setDocSlots(slots);
   };
 
-  useEffect(() => {
-    fetchDocInfo();
-  }, [doctors, docId]);
 
-  useEffect(() => {
-    if (docInfo) getAvailableSlots();
-  }, [docInfo]);
 
-  return docInfo && (
+
+
+  return barbers && (  /*แก้ชื่อ*/
       <div>
         {/*-------Doctor Details-------*/}
         <div className='flex flex-col sm:flex-row gap-4'>
           <div>
-            <img className='bg-primary w-full sm:max-w-72 rounded-lg' src={docInfo.image} alt="" />
+            <img className='bg-primary w-full sm:max-w-72 rounded-lg' src={barbers.image} alt="" />
           </div>
           <div className='flex-1 border border-gray-400 rounded-lg p-8 py-7 bg-white mx-2 sm:mx-0 mt-[-0px] sm:mx-0'>
             <p className='flex items-center gap-2 text-2xl font-medium text-gray-900'>
-              {docInfo.name}
+              {barbers.name}
               <img className='w-5' src={assets.verified_icon} alt="" />
             </p>
             <div className='flex items-center gap-2 text-sm mt-1 text-gray-600'>
-              <p>{docInfo.gender}</p>
-              <button className='py-0.5 px-2 border text-xs rounded-full'>{docInfo.experience}</button>
+              <p>{barbers.gender}</p>
+              <button className='py-0.5 px-2 border text-xs rounded-full'>{barbers.experience}</button>
             </div>
             <div>
               <p className='flex items-center gap-1 text-sm font-medium text-gray-900 mt-3'>
                 About <img src={assets.info_icon} alt="" />
               </p>
-              <p className='text-sm text-gray-500 max-w-[700px] mt-1'>{docInfo.about}</p>
+              <p className='text-sm text-gray-500 max-w-[700px] mt-1'>{barbers.about}</p>
             </div>
             <p className='text-gray-500 font-medium mt-4'>
-              Appointment fee: <span className='text-gray-600'>{currencySymbol}{docInfo.fees}</span>
+              Appointment fee: <span className='text-gray-600'>{currencySymbol}{"50"}</span>{/*docInfo.fees*/}
             </p>
           </div>
         </div>

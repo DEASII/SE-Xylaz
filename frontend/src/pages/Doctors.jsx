@@ -1,40 +1,15 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AppContext } from '../context/AppContext';
 
-// const Doctors = () => {
-//   const { speciality } = useParams();
-//   const [filterDoc, setFilterDoc] = useState([]);
-//   const [showFilter, setShowFilter] = useState(false);
-//   const [gender, setGender] = useState(null); // State สำหรับเก็บ gender ที่เลือก
-//   const navigate = useNavigate();
-//   const { doctors } = useContext(AppContext);
-//
-//   // ฟังก์ชันกรองข้อมูลแพทย์ตาม speciality และ gender
-//   useEffect(() => {
-//     let filteredDoctors = doctors;
-//
-//     // กรองตาม speciality
-//     if (speciality) {
-//       filteredDoctors = filteredDoctors.filter(doc => doc.speciality === speciality);
-//     }
-//
-//     // กรองตาม gender
-//     if (gender) {
-//       filteredDoctors = filteredDoctors.filter(doc => doc.gender === gender);
-//     }
-//
-//     setFilterDoc(filteredDoctors);
-//   }, [doctors, speciality, gender]); // Dependency array รวม gender เพื่อ update เมื่อค่าเปลี่ยน
 const Doctors = () => {
   const [barbers, setBarbers] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // เรียกใช้ API เพื่อดึงข้อมูลบาร์เบอร์
     fetch('http://localhost:8085/')
         .then(response => response.json())
         .then(data => {
-            console.log(data);
           setBarbers(data);
         })
         .catch(error => console.error('Error fetching barbers:', error));
@@ -77,7 +52,7 @@ const Doctors = () => {
                       className="border border-blue-200 rounded-xl overflow-hidden cursor-pointer transform hover:scale-105 transition-all duration-300"
                       key={index}
                   >
-                    <img className="w-full h-60 object-cover bg-blue-50" src={"/src/picture/barber.5.jpg"}  alt={barber.name} />
+                    <img className="w-full h-60 object-cover bg-blue-50" src={barber.profilePicture}  alt={barber.name} />
                     <div className="p-4">
                       <div className="flex items-center gap-2 text-sm text-center text-green-500">
                         <p className="w-2 h-2 bg-green-500 rounded-full"></p>

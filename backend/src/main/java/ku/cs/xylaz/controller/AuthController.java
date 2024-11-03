@@ -1,5 +1,7 @@
 package ku.cs.xylaz.controller;
 
+import ku.cs.xylaz.entity.Member;
+import ku.cs.xylaz.repository.MemberRepository;
 import ku.cs.xylaz.response.ApiResponse;
 import ku.cs.xylaz.request.LoginRequest;
 import ku.cs.xylaz.request.SignupRequest;
@@ -19,6 +21,8 @@ public class AuthController {
     private SignupService signupService;
     @Autowired
     private LoginService authService;
+    @Autowired
+    private MemberRepository memberRepository;
 
 
     //    // สำหรับลงทะเบียน
@@ -51,4 +55,11 @@ public class AuthController {
         }
 
     }
+
+    @GetMapping("/appointment") // แก้ไขเส้นทางเป็น "/signin"
+    public String getMem() {
+
+        return "bitch"; // ส่ง member ID เป็น String
+    }
+
 }
