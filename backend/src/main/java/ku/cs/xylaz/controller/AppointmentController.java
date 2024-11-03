@@ -8,6 +8,7 @@ import ku.cs.xylaz.repository.BarberRepository;
 import ku.cs.xylaz.repository.MemberRepository;
 import ku.cs.xylaz.request.AppointmentRequest;
 import ku.cs.xylaz.service.AppointmentService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,49 +21,25 @@ import java.util.stream.Collectors;
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
-    private final MemberRepository memberRepository;
-    private final BarberRepository barberRepository;
-    private final AppointmentRepository appointmentRepository;
+    @Autowired
+    private AppointmentRepository appointmentRepository;
 
-    public AppointmentController(AppointmentService appointmentService,
-                                 MemberRepository memberRepository,
-                                 BarberRepository barberRepository,
-                                 AppointmentRepository appointmentRepository) {
+    @Autowired
+    public AppointmentController(AppointmentService appointmentService) {
         this.appointmentService = appointmentService;
-        this.memberRepository = memberRepository;
-        this.barberRepository = barberRepository;
-        this.appointmentRepository = appointmentRepository;
     }
-
     @PostMapping("/{docId}")
-    public ResponseEntity<Appointment> bookAppointment(@PathVariable String docId, @RequestBody AppointmentRequest request) {
-        // Validate request
-        Member member = memberRepository.findByUsername(request.getUsername());
-//        Member member = memberRepository.findByUsername("chew");
-        // ใช้ docId เป็น barberId
-        Barber barber = barberRepository.findById(UUID.fromString(docId))
-                .orElseThrow(() -> new RuntimeException("Barber not found"));
-
-        // สร้างนัดหมายใหม่
-        Appointment newAppointment = new Appointment();
-        newAppointment.setMember(member);
-        newAppointment.setBarber(barber);
-        newAppointment.setAppointmentDate(request.getAppointmentDate());
-        newAppointment.setStatus("Confirmed"); // Set initial status
-        newAppointment.setServiceType(request.getServiceType());
-
-        // บันทึกนัดหมาย
-        Appointment savedAppointment = appointmentRepository.save(newAppointment);
-
-        return new ResponseEntity<>(savedAppointment, HttpStatus.CREATED);
+    public ResponseEntity<?> bookAppointment(@PathVariable String docId, @RequestBody AppointmentRequest request) {
+        try {
+            Appointment savedAppointment = appointmentService.bookAppointment(docId, request);
+            return new ResponseEntity<>(savedAppointment, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("เกิดข้อผิดพลาดในการจองนัดหมาย");
+        }
     }
 
-
-//    @GetMapping("/{docId}")
-//    public String book(@PathVariable String docId, @RequestBody AppointmentRequest request) {
-//
-//        return "yo "+request.getMemberId().toString();
-//    }
     public List<Barber> convertToBarberList(List<Map<String, Object>> barbersData) {
         List<Barber> barbers = new ArrayList<>();
 
@@ -79,9 +56,26 @@ public class AppointmentController {
 
         return barbers;
     }
-//    public List<Barber> getAllBarbers() {
-//        List<Map<String, Object>> barbersData = barberRepository.findAll(); // สมมุติว่าเป็นเมธอดที่ส่งคืน List<Map>
-//        return convertToBarberList(barbersData);
+    @GetMapping
+    public List<Map<String, Object>> getAllAppointmentData() {
+        return appointmentRepository.findAll().stream()
+                .map(appointment -> {
+                    Map<String, Object> appointmentData = new HashMap<>();
+                    String appointmentDateTime = appointment.getAppointmentDate(); // ได้ในรูปแบบ "2024-11-05 10:30"
+
+                    // แยกวันที่และเวลา
+                    String[] dateTimeParts = appointmentDateTime.split(" ");
+                    String date = dateTimeParts[0]; // ได้วันที่
+                    String time = dateTimeParts[1]; // ได้เวลา
+
+                    appointmentData.put("appointmentDate", date);
+                    appointmentData.put("appointmentTime", time);
+                    appointmentData.put("barberId", appointment.getBarber().getId());
+                    return appointmentData;
+                })
+                .collect(Collectors.toList());
+    }
+
 }
 
 

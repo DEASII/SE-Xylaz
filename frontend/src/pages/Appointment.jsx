@@ -17,8 +17,10 @@ const Appointment = () => {
   const [slotIndex, setSlotIndex] = useState(0);
   const [slotTime, setSlotTime] = useState('');
   const [barbers, setBarbers] = useState({});
+  const [appointment, setAppointment] = useState({});
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
+  const [bookedAppointments, setBookedAppointments]=useState([]);
 
 
   useEffect(() => {
@@ -30,6 +32,23 @@ const Appointment = () => {
         })
         .catch(error => console.error('Error fetching barbers:', error));
   }, []);
+  useEffect(() => {
+    fetch('http://localhost:8085/appointment')
+        .then(response => response.json())
+        .then(data => {
+          // ทำการแปลงข้อมูล appointment ที่ได้มา
+          const appointments = data.map(appointment => ({
+            date: appointment.appointmentDate, // วันที่
+            time: appointment.appointmentTime // เวลา
+          }));
+
+          // ตั้งค่า bookedAppointments
+          setBookedAppointments(appointments);
+        })
+        .catch(error => console.error('Error fetching appointment:', error));
+  }, []);
+
+
   useEffect(() => {
     // ตรวจสอบว่ามี token ใน localStorage หรือไม่ ถ้ามีก็ดึงค่าชื่อผู้ใช้
     const storedToken = localStorage.getItem('token');
@@ -62,16 +81,20 @@ const Appointment = () => {
     }
 
     // สร้างวันที่จาก docSlots
-    const selectedDateTime = new Date(docSlots[slotIndex][0].dateTime);
+    const selectedDate = new Date(docSlots[slotIndex][0].dateTime);
     const [hour, minute] = slotTime.split(':');
-    selectedDateTime.setHours(parseInt(hour), parseInt(minute));
-    // console.error(user.toString());
-    const requestBody = {
 
+    // ตั้งค่าเวลาในวันที่เลือก
+    selectedDate.setHours(parseInt(hour), parseInt(minute));
+
+    // เก็บวันและเวลาที่เลือกในรูปแบบที่ต้องการ
+    const appointmentDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')} ${String(selectedDate.getHours()).padStart(2, '0')}:${String(selectedDate.getMinutes()).padStart(2, '0')}`;
+
+    const requestBody = {
       username: user, // แทนที่ด้วย member ID ที่แท้จริงจาก context หรือ props
       barberId: docId.toString(), // แทนที่ด้วย barber ID ที่แท้จริง
-      appointmentDate: selectedDateTime.toISOString(), // แปลงเป็น ISO String
-      serviceType: "Cut", // หรือประเภทบริการที่คุณต้องการส่ง
+      appointmentDate: appointmentDate, // เก็บวันและเวลาที่เลือก
+      serviceType: "Cut" // หรือประเภทบริการที่คุณต้องการส่ง
     };
 
     try {
@@ -85,23 +108,28 @@ const Appointment = () => {
       });
 
       if (response.status === 200 || response.status === 201) {
-        alert("จองนัดหมายเรียบร้อยแล้ว!");
-
-        // อัปเดต UI หรือทำการรีเซ็ต slots ได้ที่นี่
+        alert("จองนัดหมายเรียบร้อยแล้ว!"+appointmentDate);
+        updateSlotStatus(slotIndex, slotTime);
       } else {
         alert("ไม่สามารถจองนัดหมายได้");
       }
     } catch (error) {
-      console.error("เกิดข้อผิดพลาดในการจองนัดหมาย:", error);
-      alert("เกิดข้อผิดพลาดระหว่างการจองนัดหมาย");
+      if (error.response && error.response.status === 409) {
+        alert("มีการจองซ้ำในวันและเวลานี้สำหรับช่างที่เลือก");
+      } else {
+        alert("เกิดข้อผิดพลาดระหว่างการจองนัดหมาย");
+      }
     }
   };
 
 
 
+
+
   const getAvailableSlots = async () => {
-    const slots = []; // Create a new array to store all slots
+    const slots = []; // สร้าง array เพื่อเก็บ slots ทั้งหมด
     let today = new Date();
+
 
     for (let i = 0; i < 7; i++) {
       let currentDate = new Date(today);
@@ -119,7 +147,20 @@ const Appointment = () => {
       let timeSlots = [];
       while (currentDate < endTime) {
         let formattedTime = currentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        timeSlots.push({ dateTime: new Date(currentDate), time: formattedTime });
+
+        // ตรวจสอบว่ามีการจองหรือไม่
+        const isBooked = bookedAppointments.some(
+            appointment =>
+                appointment.date === currentDate.toISOString().split('T')[0] &&
+                appointment.time === formattedTime
+        );
+
+        timeSlots.push({
+          dateTime: new Date(currentDate),
+          time: formattedTime,
+          isBooked: isBooked
+        });
+
         currentDate.setMinutes(currentDate.getMinutes() + 30);
       }
 
@@ -129,7 +170,18 @@ const Appointment = () => {
     setDocSlots(slots);
   };
 
-
+  const updateSlotStatus = (dayIndex, time) => {
+    setDocSlots(prevSlots => {
+      const updatedSlots = [...prevSlots];
+      updatedSlots[dayIndex] = updatedSlots[dayIndex].map(slot => {
+        if (slot.time === time) {
+          return { ...slot, isBooked: true }; // กำหนด isBooked เป็น true
+        }
+        return slot;
+      });
+      return updatedSlots;
+    });
+  };
 
 
 
@@ -175,7 +227,13 @@ const Appointment = () => {
 
           <div className='flex items-center gap-3 w-full overflow-x-scroll mt-4'>
             {docSlots.length > 0 && docSlots[slotIndex]?.map((item, index) => (
-                <p onClick={() => setSlotTime(item.time)} className={`text-sm font-light flex-shrink-0 px-5 py-2 rounded-full cursor-pointer ${item.time === slotTime ? 'bg-primary text-white' : 'text-gray-400 border border-gray-300'}`} key={index}>
+                <p
+                    onClick={() => !item.isBooked && setSlotTime(item.time)} // ถ้าถูกจองจะไม่สามารถคลิกได้
+                    className={`text-sm font-light flex-shrink-0 px-5 py-2 rounded-full cursor-pointer 
+        ${item.isBooked ? 'bg-gray-300 text-gray-500 cursor-not-allowed' :
+                        item.time === slotTime ? 'bg-primary text-white' : 'text-gray-400 border border-gray-300'}`}
+                    key={index}
+                >
                   {item.time.toLowerCase()}
                 </p>
             ))}

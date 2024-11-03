@@ -56,10 +56,5 @@ public class AuthController {
 
     }
 
-    @GetMapping("/appointment") // แก้ไขเส้นทางเป็น "/signin"
-    public String getMem() {
-
-        return "bitch"; // ส่ง member ID เป็น String
-    }
 
 }

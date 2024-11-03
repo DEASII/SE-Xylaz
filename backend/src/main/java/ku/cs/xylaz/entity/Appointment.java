@@ -29,7 +29,7 @@ public class Appointment {
     private Barber barber;
 
     @Column(nullable = false)
-    private LocalDateTime appointmentDate;
+    private String appointmentDate;
 
     private String status; // อาจพิจารณาใช้ Enum
 

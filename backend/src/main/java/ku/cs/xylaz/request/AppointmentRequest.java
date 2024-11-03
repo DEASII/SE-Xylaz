@@ -8,7 +8,7 @@ import lombok.Data;
 public class AppointmentRequest {
     private String username;
     private UUID barberId;
-    private LocalDateTime appointmentDate;
+    private String appointmentDate;
     private String serviceType;
 
 }

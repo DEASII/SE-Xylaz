@@ -1,8 +1,10 @@
 package ku.cs.xylaz.service;
 
+import ku.cs.xylaz.entity.Barber;
 import ku.cs.xylaz.entity.Member;
 import ku.cs.xylaz.entity.Appointment;
 import ku.cs.xylaz.repository.AppointmentRepository;
+import ku.cs.xylaz.repository.BarberRepository;
 import ku.cs.xylaz.repository.MemberRepository;
 import ku.cs.xylaz.request.AppointmentRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,33 +20,47 @@ import java.util.UUID;
 public class AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final MemberRepository memberRepository;
+    private final BarberRepository barberRepository;
 
     @Autowired
-    public AppointmentService(AppointmentRepository appointmentRepository, MemberRepository memberRepository) {
+    public AppointmentService(AppointmentRepository appointmentRepository,
+                              MemberRepository memberRepository,
+                              BarberRepository barberRepository) {
         this.appointmentRepository = appointmentRepository;
         this.memberRepository = memberRepository;
+        this.barberRepository = barberRepository;
     }
-//    public void createAppointment(AppointmentRequest appointmentRequest) {
-//        if (appointmentRequest.getMemberId() == null || appointmentRequest.getBarberId() == null) {
-//            throw new IllegalArgumentException("Member ID and Barber ID cannot be null");
-//        }
-//
-//        Appointment appointment = new Appointment();
-//        appointment.setMemberId(appointmentRequest.getMemberId());
-//        appointment.setBarberId(appointmentRequest.getBarberId());
-//        appointment.setAppointmentDate(appointmentRequest.getAppointmentDate());
-//        appointment.setServiceType(appointmentRequest.getServiceType());
-//
-//        appointmentRepository.save(appointment);
-//    }
 
+    public Appointment bookAppointment(String docId, AppointmentRequest request) {
+        // Validate request
+        Member member = memberRepository.findByUsername(request.getUsername());
 
-    public List<Appointment> getAppointmentsByUserId(UUID userId) {
-        Member member = memberRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        return appointmentRepository.findByMember(member);
-    }
-    public List<Appointment> getAppointmentsByMember(Member member) {
-        return appointmentRepository.findByMember(member); // ใช้ฟังก์ชันที่สร้างไว้
+        // ใช้ docId เป็น barberId
+        Barber barber = barberRepository.findById(UUID.fromString(docId))
+                .orElseThrow(() -> new RuntimeException("Barber not found"));
+
+        // ตรวจสอบการจองซ้ำ
+        String appointmentDate = request.getAppointmentDate();
+        List<Appointment> existingAppointments = appointmentRepository.findByBarberAndAppointmentDate(barber, appointmentDate);
+
+        if (!existingAppointments.isEmpty()) {
+            throw new RuntimeException("Appointment already exists for this barber at the selected date and time.");
+        }
+
+        // สร้างนัดหมายใหม่
+        Appointment newAppointment = new Appointment();
+        newAppointment.setMember(member);
+        newAppointment.setBarber(barber);
+        newAppointment.setAppointmentDate(appointmentDate);
+        newAppointment.setStatus("Confirmed");
+        newAppointment.setServiceType(request.getServiceType());
+
+        // บันทึกนัดหมาย
+        return appointmentRepository.save(newAppointment);
     }
 }
+
+
+
+
+
