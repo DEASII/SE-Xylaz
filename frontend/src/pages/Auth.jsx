@@ -19,8 +19,10 @@ const Auth = () => {
         });
         const token = response.data.data.token;  // jwt token
         if (token) {
+          localStorage.setItem('lastUser', username); // บันทึกชื่อผู้ใช้ล่าสุด
           localStorage.setItem('token', token); // บันทึก token ใน LocalStorage
           navigate("/");
+          window.location.reload();
         }
       } catch (error) {
         console.error('Login failed:', error.response?.data || error.message);

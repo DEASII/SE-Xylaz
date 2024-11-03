@@ -11,8 +11,9 @@ import java.util.UUID;
 @Table(name = "members") // กำหนดชื่อตารางในฐานข้อมูล
 public class Member {
     @Id
-    @GeneratedValue(generator = "UUID")
+    @GeneratedValue
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator") // ใช้ UUID
+    @Column(name = "member_id")
     private UUID id;
 
     @Column(nullable = false, unique = true) // ค่าที่ไม่ซ้ำกัน
@@ -26,4 +27,7 @@ public class Member {
 
     @Column(nullable = false) // ระบุบทบาท
     private String role;
+
+    private String email;
+    private String phone;
 }
