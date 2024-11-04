@@ -17,7 +17,7 @@ const Appointment = () => {
   const [slotIndex, setSlotIndex] = useState(0);
   const [slotTime, setSlotTime] = useState('');
   const [barbers, setBarbers] = useState({});
-  const [appointment, setAppointment] = useState({});
+  const [appointment, setAppointment] = useState([]);
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [bookedAppointments, setBookedAppointments]=useState([]);
@@ -39,9 +39,9 @@ const Appointment = () => {
           // ทำการแปลงข้อมูล appointment ที่ได้มา
           const appointments = data.map(appointment => ({
             date: appointment.appointmentDate, // วันที่
-            time: appointment.appointmentTime // เวลา
+            time: appointment.appointmentTime, // เวลา
+            barber:appointment.barberId
           }));
-
           // ตั้งค่า bookedAppointments
           setBookedAppointments(appointments);
         })
@@ -63,14 +63,27 @@ const Appointment = () => {
     fetchDocInfo();
   }, [barbers, docId]);
   useEffect(() => {
+    fetchAppointmentInfo();
+  }, [bookedAppointments]);
+  useEffect(() => {
+    updateSlotStatus(appointment);
+  }, [appointment]);
+  useEffect(() => {
     if (barbers) getAvailableSlots();
   }, [barbers]);
 
   const fetchDocInfo = async () => {
     const barberInfo = barbers.find(barber => barber.barber_id === docId);
 
-    // console.error(fetchMemberId(user));
     setBarbers(barberInfo);
+  };
+  const fetchAppointmentInfo = async () => {
+    const appointmentInfo = bookedAppointments
+        .filter(bookedAppointment => bookedAppointment.barber === docId)
+        .map(({ date, time }) => ({ date, time })); // ดึงเฉพาะ date และ time
+
+    setAppointment(appointmentInfo);
+
   };
 
 
@@ -109,7 +122,8 @@ const Appointment = () => {
 
       if (response.status === 200 || response.status === 201) {
         alert("จองนัดหมายเรียบร้อยแล้ว!"+appointmentDate);
-        updateSlotStatus(slotIndex, slotTime);
+        const newAppointment = { date: selectedDate.toISOString().split('T')[0], time: `${String(selectedDate.getHours()).padStart(2, '0')}:${String(selectedDate.getMinutes()).padStart(2, '0')}`, barber: docId };
+        updateSlotStatus([newAppointment]);
       } else {
         alert("ไม่สามารถจองนัดหมายได้");
       }
@@ -170,18 +184,34 @@ const Appointment = () => {
     setDocSlots(slots);
   };
 
-  const updateSlotStatus = (dayIndex, time) => {
+  const updateSlotStatus = (appointments) => {
     setDocSlots(prevSlots => {
       const updatedSlots = [...prevSlots];
-      updatedSlots[dayIndex] = updatedSlots[dayIndex].map(slot => {
-        if (slot.time === time) {
-          return { ...slot, isBooked: true }; // กำหนด isBooked เป็น true
+
+      appointments.forEach(appointment => {
+        // log to see current state of slots
+        console.error('Current docSlots:', updatedSlots);
+
+        const dayIndex = updatedSlots.findIndex(daySlots =>
+            daySlots.some(slot =>
+                slot.dateTime.toISOString().split('T')[0] === appointment.date
+            )
+        );
+
+        if (dayIndex !== -1) {
+          updatedSlots[dayIndex] = updatedSlots[dayIndex].map(slot => {
+            if (slot.time === appointment.time) {
+              return { ...slot, isBooked: true }; // กำหนด isBooked เป็น true
+            }
+            return slot;
+          });
         }
-        return slot;
       });
+
       return updatedSlots;
     });
   };
+
 
 
 
