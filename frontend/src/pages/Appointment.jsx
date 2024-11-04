@@ -6,7 +6,6 @@ import TopDoctors from '../components/TopDoctors';
 import axios from 'axios';
 import * as response from "autoprefixer";
 
-response.data.member_id = undefined;
 const Appointment = () => {
   const { docId } = useParams();
   const { doctors, currencySymbol } = useContext(AppContext);
@@ -136,10 +135,6 @@ const Appointment = () => {
     }
   };
 
-
-
-
-
   const getAvailableSlots = async () => {
     const slots = []; // สร้าง array เพื่อเก็บ slots ทั้งหมด
     let today = new Date();
@@ -190,8 +185,6 @@ const Appointment = () => {
 
       appointments.forEach(appointment => {
         // log to see current state of slots
-        console.error('Current docSlots:', updatedSlots);
-
         const dayIndex = updatedSlots.findIndex(daySlots =>
             daySlots.some(slot =>
                 slot.dateTime.toISOString().split('T')[0] === appointment.date
@@ -211,8 +204,6 @@ const Appointment = () => {
       return updatedSlots;
     });
   };
-
-
 
 
   return barbers && (  /*แก้ชื่อ*/

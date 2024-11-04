@@ -39,23 +39,21 @@ public class AppointmentController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("เกิดข้อผิดพลาดในการจองนัดหมาย");
         }
     }
+    @PatchMapping
+    public ResponseEntity<Appointment> updateAppointmentStatus(@PathVariable UUID id, @RequestBody Appointment appointmentDetails) {
+        Optional<Appointment> optionalAppointment = appointmentRepository.findById(id);
+        if (optionalAppointment.isPresent()) {
+            Appointment appointment = optionalAppointment.get();
+            appointment.setStatus(appointmentDetails.getStatus()); // อัปเดตสถานะ
 
-    public List<Barber> convertToBarberList(List<Map<String, Object>> barbersData) {
-        List<Barber> barbers = new ArrayList<>();
-
-        for (Map<String, Object> barberData : barbersData) {
-            Barber barber = new Barber();
-            barber.setId(UUID.fromString((String) barberData.get("barber_id"))); // เปลี่ยนให้ตรงกับคีย์ที่ใช้งาน
-            barber.setName((String) barberData.get("name")); // เปลี่ยนให้ตรงกับคีย์ที่ใช้งาน
-            barber.setSpecialty((String) barberData.get("specialty")); // เปลี่ยนให้ตรงกับคีย์ที่ใช้งาน
-            barber.setExperience((Integer) barberData.get("experience")); // เปลี่ยนให้ตรงกับคีย์ที่ใช้งาน
-            barber.setProfilePicture((String) barberData.get("profile_picture")); // เปลี่ยนให้ตรงกับคีย์ที่ใช้งาน
-
-            barbers.add(barber);
+            Appointment updatedAppointment = appointmentRepository.save(appointment);
+            return new ResponseEntity<>(updatedAppointment, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // ถ้าไม่พบการนัดหมาย
         }
-
-        return barbers;
     }
+
+
     @GetMapping
     public List<Map<String, Object>> getAllAppointmentData() {
         return appointmentRepository.findAll().stream()
@@ -71,10 +69,15 @@ public class AppointmentController {
                     appointmentData.put("appointmentDate", date);
                     appointmentData.put("appointmentTime", time);
                     appointmentData.put("barberId", appointment.getBarber().getId());
+                    appointmentData.put("barberProfilePicture", appointment.getBarber().getProfilePicture());
+                    appointmentData.put("barberName", appointment.getBarber().getName());
+                    appointmentData.put("username",appointment.getMember().getUsername());
+                    appointmentData.put("appointmentId",appointment.getId());
                     return appointmentData;
                 })
                 .collect(Collectors.toList());
     }
+
 
 }
 
